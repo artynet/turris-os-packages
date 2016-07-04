@@ -51,7 +51,4 @@ fi
 exit 0
 endef
 
-
-
 $(eval $(call BuildPackage,resolver-conf))
-
