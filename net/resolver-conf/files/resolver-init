@@ -7,6 +7,7 @@ EXTRA_COMMANDS="convert"
 EXTRA_HELP="	convert Converts unbound config to /etc/config/resolver"
 
 START=60
+USE_PROCD=1
 
 SECTIONFROM=""
 SECTIONTO=""
