@@ -45,19 +45,25 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DIR) $(1)/etc/resolver
-	$(INSTALL_CONF) ./files/resolver-config $(1)/etc/resolver/resolver-config-default
+	$(INSTALL_CONF) ./files/resolver-config $(1)/etc/config/resolver
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/resolver-init $(1)/etc/init.d/resolver
+endef
+
+define Package/$(PKG_NAME)/preinst
+#!/bin/sh
+# check if we are on real system
+if [ -z "$$IPKG_INSTROOT" ]; then
+if [ ! -f /etc/config/resolver ]; then
+cp /etc/resolver/resolver /etc/resolver/resolver-config-old
+fi
+fi
 endef
 
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 # check if we are on real system
 if [ -z "$$IPKG_INSTROOT" ]; then
-if [ ! -f /etc/config/resolver ]; then
-cp /etc/resolver/resolver-config-default /etc/config/resolver
-fi
-
 if [ ! -f /etc/resolver/converted ]; then
 /etc/init.d/resolver convert
 touch /etc/resolver/converted
