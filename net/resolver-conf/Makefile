@@ -50,16 +50,6 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/resolver-init $(1)/etc/init.d/resolver
 endef
 
-define Package/$(PKG_NAME)/preinst
-#!/bin/sh
-# check if we are on real system
-if [ -z "$$IPKG_INSTROOT" ]; then
-if [ ! -f /etc/config/resolver ]; then
-cp /etc/resolver/resolver /etc/resolver/resolver-config-old
-fi
-fi
-endef
-
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 # check if we are on real system
