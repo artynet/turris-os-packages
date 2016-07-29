@@ -44,7 +44,7 @@ define Package/unbound
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
   TITLE+= (daemon)
-  DEPENDS+= +libunbound $(TURRIS_DEPS)
+  DEPENDS+= +libunbound +cert-backup
 endef
 
 define Package/unbound/description

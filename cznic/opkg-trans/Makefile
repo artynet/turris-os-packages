@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=opkg-trans
-PKG_VERSION:=7
+PKG_VERSION:=22
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://gitlab.labs.nic.cz/turris/updater.git
 PKG_SOURCE:=$(PKG_NAME).tar.gz
-PKG_SOURCE_VERSION:=cfd0e3c60871d1a720dc4eb32ae2570d5f0f07dd
+PKG_SOURCE_VERSION:=327aa502cb8a8736b2919d8c3a6fa33193758825
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)
 PKG_MAINTAINER:=Michal Vaner <michal.vaner@nic.cz>
@@ -36,9 +36,15 @@ define Package/opkg-trans/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/opkg-trans $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/pkgupdate $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/pkgupdate/opkg $(1)/usr/bin/opkg-pkgupdate-wrapper.sh
 
 	$(INSTALL_DIR) $(1)/etc/updater
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/src/pkgupdate/configs/* $(1)/etc/updater
+
+	$(INSTALL_DIR) $(1)/etc/updater/hook_preupdate
+	$(INSTALL_DIR) $(1)/etc/updater/hook_postupdate
+	touch $(1)/etc/updater/hook_preupdate/.keep
+	touch $(1)/etc/updater/hook_postupdate/.keep
 endef
 
 define Package/opkg-trans/conffiles
@@ -54,18 +60,24 @@ endef
 define Package/updater-ng/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/pkgupdate/updater.sh $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/pkgupdate/updater-unstuck.sh $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/pkgupdate/updater-wipe.sh $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/ssl
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/legacy/updater.pem $(1)/etc/ssl/updater.pem
 
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/updater.config $(1)/etc/config/updater
-
+ifneq ($(PKG_BRANCH),)
+	echo >> $(1)/etc/config/updater
+	echo "config override 'override'" >> $(1)/etc/config/updater
+	echo "	option branch '$(PKG_BRANCH)'" >> $(1)/etc/config/updater
+endif
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/pkgupdate/init $(1)/etc/init.d/updater
 
-	$(INSTALL_DIR) $(1)/etc/cron.d
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/src/pkgupdate/cron $(1)/etc/cron.d/updater
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/updater.defaults $(1)/etc/uci-defaults/updater
 endef
 
 define Package/updater-ng/conffiles
@@ -76,6 +88,8 @@ define Package/updater-ng/postinst
 #!/bin/sh
 [ -n "$$IPKG_INSTROOT" ] || {
 /etc/init.d/updater enable || true
+# Run the uci-defaults now if we are installed at runtime and not flashed
+/etc/uci-defaults/updater && rm /etc/uci-defaults/updater
 }
 endef
 
