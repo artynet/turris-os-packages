@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=foris
-PKG_VERSION:=64-62-g3f5a923
+PKG_VERSION:=64-82-gf1b392d
 PKG_RELEASE:=1
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)
 PKG_SOURCE_PROTO:=git
@@ -85,7 +85,7 @@ define Package/foris/postinst
 #!/bin/sh
 set -x
 [ -n "$$IPKG_INSTROOT" ] || {
-+# Cleanup of 1.0
+# Cleanup of 1.0
 if [ -f /www2/forris.pyc ]; then
 	find /www2 -name '*.pyc' -exec rm -f \{\} \;
 	rmdir /www2/nuci/modules /www2/nuci /www2/config_handlers /www2/utils /www2 || true

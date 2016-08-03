@@ -19,10 +19,6 @@
 
 DEBUG=1
 
-I2C_BUS="1"
-I2C_ADDR="0x2a"
-I2C_REG="0x9"
-
 DEV="/dev/mmcblk0"
 FS_DEV="${DEV}p1"
 FS_MOUNTPOINT="/mnt"
@@ -77,8 +73,8 @@ mount_fs() {
 
 	$BIN_MOUNT $1 $2
 	if [ $? -ne 0 ]; then
-		e "Mount $1 on $2 failed. Exit."
-		exit 22
+		e "Mount $1 on $2 failed."
+		return 22
 	fi
 }
 
@@ -103,6 +99,9 @@ reflash () {
 			d "Testing FS on device $dev"
 			[ -b "/dev/$dev" ] || continue
 			mount_fs "/dev/$dev" $SRCFS_MOUNTPOINT
+			if [ $? -ne 0 ]; then
+				continue
+			fi
 			d "Searching for ${SRCFS_MOUNTPOINT}/${MEDKIT_FILENAME} on $dev"
 			IMG="$(ls -1 ${SRCFS_MOUNTPOINT}/${MEDKIT_FILENAME} | sort | tail -n 1)"
 			if [ -n "${IMG}" ] && [ -f "${IMG}" ]; then
@@ -146,10 +145,13 @@ EOF
 		d "Rootdir is $ROOTDIR"
 		cd $ROOTDIR
 		$BIN_TAR zxf $IMG
+		RD=`$BIN_DATE '+%s' -r sbin/init`
 		cd /
 		$BIN_BTRFS subvolume snapshot "${FS_MOUNTPOINT}/@" "${FS_MOUNTPOINT}/@factory"
 		umount_fs $FS_MOUNTPOINT
 		umount_fs $SRCFS_MOUNTPOINT
+
+		check_reset_clock $RD
 	else
 		d "No medkit image found. Exit to shell."
 		exit 0
@@ -158,9 +160,19 @@ EOF
 	d "Reflash succeeded."
 }
 
-reset_clock () {
-	$BIN_DATE 201603010000
-	$BIN_HWCLOCK -w
+check_reset_clock () {
+	D=${1:-`$BIN_DATE '+%s' -d 201606010000`}
+	CD=`$BIN_DATE '+%s'`
+
+	# reset clock to the date in param if it is before the 
+	# system time or behind for more than 360 days from the system time
+	if [ $D -gt $CD ] || [ $(( $D + 31104000 )) -lt $CD ]; then
+		d "Resetting clock to $D ."
+		$BIN_DATE "@${D}"
+		$BIN_HWCLOCK -w
+	else
+		d "Current time `$BIN_DATE` seems to be OK. Keeping it."
+	fi
 }
 
 
@@ -194,7 +206,6 @@ case "$MODE" in
 		;;
 	3)
 		d "Mode: Reflash..."
-		reset_clock
 		reflash
 		;;
 	*)
