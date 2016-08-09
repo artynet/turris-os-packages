@@ -34,7 +34,7 @@ define Package/knot-resolver
 	SUBMENU:=IP Addresses and Names
 	TITLE:=Knot DNS Resolver
 	URL:=https://gitlab.labs.nic.cz/knot/resolver
-	DEPENDS=+knot-libknot +libuv +luajit +knot-libzscanner +knot-libdnssec +dnssec-rootkey +resolver-conf
+	DEPENDS=+knot-libknot +libuv +luajit +knot-libzscanner +knot-libdnssec +dnssec-rootkey +resolver-conf +luasocket +luasec
 endef
 
 define Package/knot-resolver/description
