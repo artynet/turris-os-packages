@@ -113,7 +113,7 @@ load_uci_config_kresd() {
 	# rundir
 	config_get rundir "$section" rundir "$DEFAULT_RUNDIR"
 	[ -d "$rundir" ] && rm -rf "$rundir"            #clear cache
-	[ ! -d "$rundir" ] && mkdir -p "$rundir"
+	mkdir -p "$rundir"
 	procd_append_param command "$rundir"
 
 	# procd stdout/err logging
