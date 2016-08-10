@@ -8,7 +8,7 @@ check_root_key() {
 	#check if it looks good
 	local rootkey_file=$1
 	if [ -e $rootkey_file ]; then
-		grep -qE '[[:space:]](DNSKEY|DS|TYPE43)[[:space:]]' $rootkey_file && return 0
+		grep -qE '[[:space:]](DNSKEY|DS|TYPE[[:digit:]][[:digit:]])[[:space:]]' $rootkey_file && return 0
 	fi
 	return 1
 }
