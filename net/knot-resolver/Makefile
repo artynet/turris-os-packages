@@ -10,14 +10,14 @@ PKG_RELRO_FULL:=0
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=knot-resolver
-PKG_VERSION:=4a49a83f028c3f75b71b508143b98e34cd8d4436
-PKG_RELEASE:=3
+PKG_VERSION:=1.0.0
+PKG_RELEASE:=6
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://gitlab.labs.nic.cz/knot/resolver.git
-PKG_SOURCE_VERSION:=$(PKG_VERSION)
+PKG_SOURCE_VERSION:=3163b3457981e8969541ceba91f93e7735698ea7
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.gz
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -34,7 +34,7 @@ define Package/knot-resolver
 	SUBMENU:=IP Addresses and Names
 	TITLE:=Knot DNS Resolver
 	URL:=https://gitlab.labs.nic.cz/knot/resolver
-	DEPENDS=+knot-libknot +libuv +luajit +knot-libzscanner +knot-libdnssec +dnssec-rootkey +resolver-conf +luasocket +luasec
+	DEPENDS=+knot-libknot +libuv +luajit +knot-libzscanner +knot-libdnssec +dnssec-rootkey +resolver-conf +luasec +luasocket
 endef
 
 define Package/knot-resolver/description
@@ -42,11 +42,12 @@ define Package/knot-resolver/description
 endef
 
 MAKE_FLAGS += \
-	PREFIX=/usr
+	PREFIX=/usr \
+	ETCDIR=/etc/kresd
 
 define Package/knot-resolver/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/kresd $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/*bin/kresd $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libkres.so* $(1)/usr/lib
@@ -62,7 +63,7 @@ set -ex
 if [ -z "$$IPKG_INSTROOT" ]; then
 /etc/init.d/dnsmasq restart
 sleep 2 # Cooldown for above (problems in times of reinstall)
-/etc/init.d/kresd restart
+/etc/init.d/resolver restart
 fi
 endef
 
@@ -72,8 +73,13 @@ set -ex
 if [ -z "$$IPKG_INSTROOT" ]; then
 
 # Remove the script if it is there.
-if [ -e /etc/init.d/kresd ] ; then /etc/init.d/kresd disable ; fi
+if [ -e /etc/init.d/kresd ] ; then /etc/init.d/kresd stop ; /etc/init.d/kresd disable ;  fi
 fi
+endef
+
+define Package/knot-resolver/postrm
+#!/bin/sh
+[ \! -x /etc/init.d/resolver ] || /etc/init.d/resolver restart
 endef
 
 $(eval $(call BuildPackage,knot-resolver))
