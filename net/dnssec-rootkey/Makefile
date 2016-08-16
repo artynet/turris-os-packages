@@ -48,6 +48,8 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/rootkeys_backup.sh $(1)/usr/bin/rootkeys_backup.sh
 	$(INSTALL_DIR) $(1)/etc/cron.d/
 	$(INSTALL_CONF) ./files/rootkeys_backup.cron $(1)/etc/cron.d/rootkeys_backup
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/rootkey.oneshot $(1)/etc/uci-defaults/rootkey_init.sh
 endef
 
 $(eval $(call BuildPackage,dnssec-rootkey))

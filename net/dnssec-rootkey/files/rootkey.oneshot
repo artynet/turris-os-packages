@@ -1,0 +1,4 @@
+#!/bin/sh
+
+#Make backup of DNSSEC root key for the first time.
+/usr/bin/rootkeys_backup.sh
