@@ -149,7 +149,6 @@ endif
 CONFIGURE_ARGS+= \
 	--disable-debug \
 	--enable-daemon \
-	--enable-getifaddrs \
 	--with-nan-emulation \
 	--without-libgcrypt
 
