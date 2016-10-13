@@ -26,9 +26,18 @@ add_listen_addr() {
 }
 
 init_header() {
-	echo "--Automatically generated file; DO NOT EDIT">$CONFIGFILE
-	echo "cache.clear()">>$CONFIGFILE
-	echo "modules = { 'policy' }">>$CONFIGFILE
+	echo "--Automatically generated file; DO NOT EDIT" > $CONFIGFILE
+	echo "modules = {" >> $CONFIGFILE
+	config_get_bool prefetch common prefetch 0
+	echo "    'policy'" >> $CONFIGFILE
+	if [ "$prefetch" \!= 0 ]; then
+		echo "  , 'stats'" >> $CONFIGFILE
+		echo "  , predict = {" >> $CONFIGFILE
+		echo "        window = 30 -- 30 minutes sampling window" >> $CONFIGFILE
+		echo "      , period = 24*(60/30) -- track last 24 hours" >> $CONFIGFILE
+		echo "  }" >> $CONFIGFILE
+	fi
+	echo "}" >> $CONFIGFILE
 }
 
 set_param_func() {
@@ -76,16 +85,19 @@ load_uci_config_common() {
 
 	# ipv4
 	config_get_bool net_ipv4 "$section" net_ipv4
-	set_param_var "net.ipv4" "$net_ipv4"
-
+	net_ipv4_bool=$(if test "$net_ipv4" -eq "1"; then echo true; else echo false; fi)
+	set_param_var "net.ipv4" "$net_ipv4_bool"
+	
 	# ipv6
 	config_get_bool net_ipv6 "$section" net_ipv6
-	set_param_var "net.ipv6" "$net_ipv6"
+	net_ipv6_bool=$(if test "$net_ipv6" -eq "1"; then echo true; else echo false; fi)
+	set_param_var "net.ipv6" "$net_ipv6_bool"
 
 	# msg_cache_size
 	config_get msg_cache_size "$section" msg_cache_size
-	conv_msg_cache_size=$(echo "$msg_cache_size"|sed -e "s/K/*kB/g" -e "s/M/*MB/g" -e "s/G/*GB/g" -e "s/k$/*kB/g" -e "s/m/*MB/g" -e "s/g/*GB/g" )
-	set_param_var "cache.size" "$conv_msg_cache_size"
+	conv_msg_cache_size=$(echo "$msg_cache_size"|sed -e 's/k$/*kB/gi' -e 's/M$/*MB/gi' -e 's/G$/*GB/gi')
+	set_param_func "cache.open" "$conv_msg_cache_size"
+	set_param_func "cache.clear" ""
 
 	config_get_bool do_forward "$section" forward_upstream 1
 	if [ "$do_forward" = "1" ] ; then
@@ -112,8 +124,7 @@ load_uci_config_kresd() {
 
 	# rundir
 	config_get rundir "$section" rundir "$DEFAULT_RUNDIR"
-	[ -d "$rundir" ] && rm -rf "$rundir"            #clear cache
-	mkdir -p "$rundir"
+	[ ! -d "$rundir" ] && mkdir -p "$rundir"
 	procd_append_param command "$rundir"
 
 	# procd stdout/err logging
